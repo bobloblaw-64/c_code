@@ -1,38 +1,12 @@
-# Ignore build directories
-build/
-*/build/
+# Ignore everything in this directory by default
+*
 
-# Ignore VS Code/Codium settings
-.vscode/
-.vscode-test/
+# Allow Git to enter subdirectories (if applicable)
+!*/
 
-# Ignore compiled binaries
-*.o
-*.out
-*.exe
-*.a
-*.so
-
-# Ignore executables created by gcc
-rot13
-rot13_vert
-rotate_og
-rotate_plain
-rotate_pos
-rotate_uppercase
-hello_program
-hello_program2
-count_program
-
-# Ignore core dumps
-core
-*.core
-
-# Ignore temporary files
-*~
-*.tmp
-*.swp
-*.swo
-
-# Ignore macOS junk (if you ever sync)
-.DS_Store
+# Whitelist source files, headers, and build scripts
+!*.c
+!*.h
+!Makefile
+!.gitignore
+!README.md
