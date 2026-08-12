@@ -36,11 +36,25 @@ int main(void)
 
     fclose(fp);
 
-    //verify
-    for (int j = 0; j < i; j++)
+    //find max and min
+    int max_index =0;
+    int min_index =0;
+
+    for (int j = 1; j < i; j++)
     {
-        printf("Name: %-10s | Number: %d\n", people_array[j].name, people_array[j].number);
+        if (people_array[j].number > people_array[max_index].number)
+        {
+            max_index = j;
+        }
+
+        if (people_array[j].number < people_array[min_index].number)
+        {
+            min_index = j;
+        }
     }
+
+    printf("Maximum= %s %i\n", people_array[max_index].name, people_array[max_index].number);
+    printf("Minimum= %s %i\n", people_array[min_index].name, people_array[min_index].number);
 
     return 0;
 
