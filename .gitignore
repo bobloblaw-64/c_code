@@ -10,3 +10,7 @@
 !Makefile
 !.gitignore
 !README.md
+
+#whitelist text files
+
+!.txt
