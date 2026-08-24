@@ -1,5 +1,6 @@
 /*CITS2002 Assesed Lab 1 
-Code by Finlay Thomson, SID: 23953297 */
+Code by Finlay Thomson, 
+SID: 23953297 */
 
 #include<stdio.h>
 #include<stdlib.h>
