@@ -30,7 +30,6 @@ int file_read(char filename[], struct process procs[])
     if (fp == NULL)
     {
         printf("file error\n");
-        fclose(fp);
         return 1;
     }
 
@@ -50,7 +49,7 @@ int file_read(char filename[], struct process procs[])
         
         procs[i].exec_prog = 0;
         procs[i].ran_in_pass = false;
-        procs[i].complete = true;
+        procs[i].complete = false;
 
         //check if the faults we read are the same as num_faults claims
         if (procs[i].num_faults != (matched - 4)) 
@@ -61,20 +60,26 @@ int file_read(char filename[], struct process procs[])
         }
         i++;
     }
-    num_of_proceses = i + 1;
+    num_of_proceses = i;
     fclose(fp);
     return 0;
 }
 
+//return the index of the task with priority from a given array, 
 int priority_decider(struct process tasks[])
 {
-    int prio_index = -1; //index of the process with the current highest priority
-    int max_prio = 100; //intitalise the max priority as the first priority value
+    /*index of the process with the current highest priority, 
+    start at -1 so we can return -1 if nothing needs processing*/
+    int prio_index = -1; 
+    
+    int max_prio = 100; //intitalise the max priority delibratly higher than any real priority value 
 
     for (int i = 0; i < num_of_proceses; i++)
     {
-        if (tasks[i].complete || tasks[i].ran_in_pass) continue; //skip this task if already ran or complete 
-
+        if (tasks[i].complete || tasks[i].ran_in_pass) 
+        {
+            continue; //skip this task if already ran or complete
+        }
         if (tasks[i].priority < max_prio)
         {
             prio_index = i;
@@ -84,14 +89,31 @@ int priority_decider(struct process tasks[])
     return prio_index;
 }
 
+//checks if every process has been run in a pass, if so returns 1 and resets all ran_in_pass to false
+int is_finished(struct process tasks[])
+{
+
+}
+
+/* lets run this process!! 
+given a array of processes and an index of a process, runs said process for up to 10 ms*/
+void run_process(struct process tasks[], int proc_no)
+{
+    
+};
+
+
+
 //main simulation
 int main(int argc, char *argv[])
 {
     struct process process_array[10];
 
-    if (file_read(argv[1], process_array) == 1)
+    if (file_read(argv[1], process_array) == 1) //ensure file has been read correctly
     {
         return 1;
     }
+
+
 
 }
