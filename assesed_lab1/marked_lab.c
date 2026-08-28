@@ -89,7 +89,7 @@ int priority_decider(struct process tasks[])
     return prio_index;
 }
 
-//checks if every process has been run in a pass, if so returns 1 and resets all ran_in_pass to false
+//return 1 if every task is complete, else return 0 and reset ran_in pass variable
 int is_finished(struct process tasks[])
 {
 
@@ -99,6 +99,7 @@ int is_finished(struct process tasks[])
 given a array of processes and an index of a process, runs said process for up to 10 ms*/
 void run_process(struct process tasks[], int proc_no)
 {
+    int local_progress = 0;
     
 };
 
@@ -114,6 +115,16 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    while(true) //main loop
+    {
+        int index = priority_decider(process_array);
 
+        if (index == -1 && is_finished(process_array))
+        {
+            break;
+        }
+
+        run_process(process_array, index);
+    } 
 
 }
