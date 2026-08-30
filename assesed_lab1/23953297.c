@@ -37,7 +37,7 @@ int file_read(char filename[], struct process procs[])
     int i = 0;
 
     //read file, copy data to array and initialise values
-    while(fgets(line, sizeof(line), fp))
+    while(fgets(line, sizeof(line), fp) && i < 8)
     {
         int matched = sscanf(line, "%s %d %d %d %d %d %d %d %d %d %d %d",
              procs[i].name, &procs[i].priority, 
@@ -160,14 +160,14 @@ int main(int argc, char *argv[])
 {
     struct process process_array[10];
 
-    if (file_read(argv[1], process_array) == 1) //ensure file has been read correctly
+    if(argc != 2)//ensure correct number of arguments
     {
+        printf("incorrect number of arguments\n");
         return 1;
     }
 
-    if(argc != 2)
+    if (file_read(argv[1], process_array) == 1) //ensure file has been read correctly
     {
-        printf("incorrect number of arguments");
         return 1;
     }
 
