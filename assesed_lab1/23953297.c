@@ -58,6 +58,7 @@ int file_read(char filename[], struct process procs[])
             fclose(fp);
             return 1;
         }
+
         i++;
     }
     num_of_proceses = i;
@@ -89,18 +90,67 @@ int priority_decider(struct process tasks[])
     return prio_index;
 }
 
-//return 1 if every task is complete, else return 0 and reset ran_in pass variable
-int is_finished(struct process tasks[])
+//return true if every task is complete, else return false 
+bool is_finished(struct process tasks[])
 {
+    for (int i = 0; i < num_of_proceses; i++)
+    {
+        if (!tasks[i].complete)
+        {
+            return false;
+        }
+    }
+    return true;
+}
 
+//reset ran_in pass varriables
+void reset(struct process tasks[])
+{
+    for (int i = 0; i < num_of_proceses; i++)
+    {
+        tasks[i].ran_in_pass = false;
+    }
+}
+
+//helper function to return minimum of two integers
+int min(int x, int y)
+{
+    if (x < y)
+    {
+        return x;
+    }
+    else
+    {
+        return y;
+    }
 }
 
 /* lets run this process!! 
 given a array of processes and an index of a process, runs said process for up to 10 ms*/
-void run_process(struct process tasks[], int proc_no)
+void run_process(struct process tasks[], int x)
 {
-    int local_progress = 0;
-    
+    int remaining_time = tasks[x].total_exec_time - tasks[x].exec_prog;
+    int local_progress = min(10, remaining_time);
+
+    //what faults trigger in this pass?
+    for(int i = 0; i < tasks[x].num_faults; i++)
+    {
+        if (tasks[x].exec_prog <= tasks[x].fault_positions[i] && 
+            tasks[x].fault_positions[i] < tasks[x].exec_prog + local_progress)
+        {
+            global_time += 4;
+        } 
+    }
+
+    tasks[x].ran_in_pass = true;
+    tasks[x].exec_prog += local_progress;
+    global_time += local_progress;
+
+    if(remaining_time <= 10)//this is true iff the process is complete in this pass
+    {
+        tasks[x].complete = true;
+        printf("%s %d\n", tasks[x].name, global_time);
+    }
 };
 
 
@@ -115,16 +165,31 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    if(argc != 2)
+    {
+        printf("incorrect number of arguments");
+        return 1;
+    }
+
     while(true) //main loop
     {
         int index = priority_decider(process_array);
 
-        if (index == -1 && is_finished(process_array))
+        if (index == -1)
         {
-            break;
+            if (is_finished(process_array))
+            {
+                break;
+            }
+            else
+            {
+                reset(process_array);
+                continue;
+            }
         }
 
         run_process(process_array, index);
     } 
 
+    return 0;
 }
