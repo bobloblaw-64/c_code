@@ -13,4 +13,4 @@
 
 #whitelist text files
 
-!.txt
+!*.txt
