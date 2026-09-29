@@ -1,32 +1,45 @@
 #include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
+
 void line_parse(char *line) {
 
-    int i = 0;
-    char split_line[120];
-    char *word = strtok(line, " ");
+    char *name;
 
-    while (word != NULL) {
+    int used;
+    int ints;
 
-        split_line[i] = *word;
-        word = strtok(NULL, " ");
-        i++;
-
-    }
-
-    char name = split_line[0];
-    int priority = split_line[1];
-    int total_time = split_line[2];
-    int fault_count = split_line[3];
-    int *fault_positions = malloc(fault_count * sizeof(int));
+    int priority;
+    int exec_time;
+    int num_faults;
     
-    for (int i = 4; i < (fault_count + 3); i++) {
-        int j = i - 4;
-        fault_positions[j] = split_line[i];
+
+    if (sscanf(line, "%ms%n", &name, &used) == 1) {
+        char *cursor = line + used;
+        
+        if (sscanf(cursor, "%d %d %d%n",&priority, &exec_time, &num_faults, &ints) == 3) {
+            char *faults = cursor + ints;
+            int *fault_positions = malloc(num_faults * sizeof(int));
+
+            int i = 0;
+            while (i < num_faults) {
+
+                if (sscanf(faults, "%d%n", &fault_positions[i], &used) != 1) {
+                    break;
+                }
+                faults = faults + used;
+                i++;
+
+            }
+        }
     }
+
+printf("%s %d %d %d %d %d", name, priority, exec_time, num_faults, fault_positions[0], fault_positions[1]);
+
+
 }
 
 int main() {
     line_parse("Program7 3 110 2 40 90\n");
+    
     return 0;
 }
