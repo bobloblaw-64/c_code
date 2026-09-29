@@ -1,0 +1,7 @@
+Operation6 2 95 2 10 55
+Program7 1 110 0
+Task3 3 50 1 20
+Job4 2 70 3 15 45 65
+Batch5 1 60 1 25
+LongProcessName9 4 88 3 30 60 80
+Op8 3 80 2 10 40
