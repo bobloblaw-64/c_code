@@ -36,19 +36,27 @@ FILE* open_file(char filename[]) {
 
 //given a line and process structure, will write that line to the struct
 int line_parse(char *line, struct process *dest) {
-    int used;
-    int ints;
-    if (sscanf(line, "%ms%n", &dest->name, &used) == 1) {
+    
+    int used;//bit of the line already parsed
+    int ints;//all the int values that arent the name or fault positions
+
+    //first assign name
+    if (sscanf(line, "%ms%n", &dest->name, &used) == 1) { 
         char *cursor = line + used;
-        
+        /*
+        then prio, total exec time and num of faults are defined. Followed
+         by the dynamic array that is fault positions
+         */
         if (sscanf(cursor, "%d %d %d%n",&dest->priority, &dest->total_exec_time, &dest->num_faults, &ints) == 3) {
             int num_faults = dest->num_faults;
             char *faults = cursor + ints;
             dest->fault_positions = malloc(num_faults * sizeof(int));
 
+            //loop through the faults and add to the array we allocated earlier
             int i = 0;
             while (i < num_faults) {
                 if (sscanf(faults, "%d%n", &dest->fault_positions[i], &used) != 1) {
+                    free(dest->fault_positions);
                     return 1;
                 }
                 faults = faults + used;
@@ -57,6 +65,7 @@ int line_parse(char *line, struct process *dest) {
             return 0;
         }
     }
+    free(dest->name);
     return 1;
 }
 
@@ -64,29 +73,24 @@ int line_parse(char *line, struct process *dest) {
 int file_read(char filename[], struct process procs[]) {
     //get a pointer to file
     FILE *file = open_file(filename);
+    if (file == NULL) return 1;  
 
     //initialise variables
     char *line = NULL;
     size_t len = 0;
     ssize_t amount_read;
-    int i = 0;
-    
+    int i = 0; 
 
     //read file, copy data to array and initialise values
-    while(amount_read != -1) {
+    while((amount_read = getline(&line, &len, file)) != -1) {
+        
+        if (line_parse(line, &procs[i]) == 1) return 1;
 
-        amount_read = getline(&line, &len, file);
-        char *split_line = malloc(len);
-
-        *split_line = space_split(*line);
-
-        //to add: parse split line and sens data to struct
-
-        procs[i].fault_positions = malloc(procs[i].num_faults * sizeof(procs[i].fault_positions));
         procs[i].exec_prog = 0;
         procs[i].ran_in_pass = false;
         procs[i].complete = false;
         
+        //!!reallocate here!!
         i++;
     }
     free(line);
@@ -190,14 +194,13 @@ int main(int argc, char *argv[])
     
     struct process *process_array = malloc(sizeof(struct process));
 
-    if(argc != 2)//ensure correct number of arguments
-    {
+    //ensure correct number of arguments
+    if(argc != 2) {
         printf("incorrect number of arguments\n");
         return 1;
     }
-
-    if (file_read(argv[1], process_array) == 1) //ensure file has been read correctly
-    {
+    //ensure file has been read correctly
+    if (file_read(argv[1], process_array) == 1) {
         return 1;
     }
 
