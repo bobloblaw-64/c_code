@@ -34,8 +34,31 @@ FILE* open_file(char filename[]) {
     return fp;
 }
 
-//split a string by spaces (yet to be written)
-char space_split(char lst);
+//given a line and process structure, will write that line to the struct
+int line_parse(char *line, struct process *dest) {
+    int used;
+    int ints;
+    if (sscanf(line, "%ms%n", &dest->name, &used) == 1) {
+        char *cursor = line + used;
+        
+        if (sscanf(cursor, "%d %d %d%n",&dest->priority, &dest->total_exec_time, &dest->num_faults, &ints) == 3) {
+            int num_faults = dest->num_faults;
+            char *faults = cursor + ints;
+            dest->fault_positions = malloc(num_faults * sizeof(int));
+
+            int i = 0;
+            while (i < num_faults) {
+                if (sscanf(faults, "%d%n", &dest->fault_positions[i], &used) != 1) {
+                    return 1;
+                }
+                faults = faults + used;
+                i++;
+            }
+            return 0;
+        }
+    }
+    return 1;
+}
 
 //Read file and save data to array
 int file_read(char filename[], struct process procs[]) {
