@@ -24,6 +24,16 @@ struct process
     bool complete;
 };
 
+//memory cleanup script
+void mem_clean(int count, struct process proc_array[]) {
+    
+    for (int i = 0; i < count; i++) {
+        free(proc_array[i].name);
+        free(proc_array[i].fault_positions);        
+    }
+        free(proc_array);
+}
+
 //open a file
 FILE* open_file(char filename[]) {
     FILE *fp;
@@ -44,10 +54,8 @@ int line_parse(char *line, struct process *dest) {
     //first assign name
     if (sscanf(line, "%ms%n", &dest->name, &used) == 1) { 
         char *cursor = line + used;
-        /*
-        then prio, total exec time and num of faults are defined. Followed
-         by the dynamic array that is fault positions
-         */
+        
+        //then prio, total exec time and num of faults are defined. Followed by the dynamic array that is fault positions
         if (sscanf(cursor, "%d %d %d%n",&dest->priority, &dest->total_exec_time, &dest->num_faults, &ints) == 3) {
             int num_faults = dest->num_faults;
             char *faults = cursor + ints;
@@ -57,6 +65,7 @@ int line_parse(char *line, struct process *dest) {
             int i = 0;
             while (i < num_faults) {
                 if (sscanf(faults, "%d%n", &dest->fault_positions[i], &used) != 1) {
+                    free(dest->name);
                     free(dest->fault_positions);
                     return 1;
                 }
@@ -65,8 +74,9 @@ int line_parse(char *line, struct process *dest) {
             }
             return 0;
         }
+        free(dest->name);
     }
-    free(dest->name);
+    
     return 1;
 }
 
@@ -91,21 +101,24 @@ int file_read(char filename[], struct process **procs_out) {
     int i = 0; 
     
     //read file, copy data to array and initialise values
-    while((amount_read = getline(&line, &len, file)) != -1) {
+    while((amount_read = getline(&line, &len, file)) != -1) { //getline allocated memory dynamically as per spec
 
-        if (i == capacity) {
+        if (i == capacity) { //reallocate memory to double previous as and when required
 
             capacity *= 2;
             struct process *tmp = realloc(procs, capacity * sizeof(struct process));
             if (tmp == NULL) {
-                free(procs);
+                mem_clean(i, procs);
                 return 1;
             }
             
             procs = tmp;
         }
 
-        if (line_parse(line, &procs[i]) == 1) return 1;
+        if (line_parse(line, &procs[i]) == 1) { //parse line and copy data to structure
+            mem_clean(i, procs);
+            return 1;
+        }
 
         procs[i].exec_prog = 0;
         procs[i].ran_in_pass = false;
@@ -113,6 +126,14 @@ int file_read(char filename[], struct process **procs_out) {
         
         i++;
     }
+
+    struct process *tmp = realloc(procs, i * sizeof(struct process));//trim array now that we know how many processes
+    if (tmp == NULL) {
+        mem_clean(i, procs);
+        return 1;
+    }
+    
+    procs = tmp;
     num_of_proceses = i;
     free(line);
     fclose(file);
@@ -245,5 +266,6 @@ int main(int argc, char *argv[])
         run_process(process_array, index);
     } 
 
+    mem_clean(num_of_proceses, process_array);
     return 0;
 }
