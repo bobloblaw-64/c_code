@@ -2,10 +2,11 @@
 Code by Finlay Thomson, 
 SID: 23953297 */
 
-#include <stddef.h>
+#include<stddef.h>
 #include<stdio.h>
 #include<stdlib.h>
 #include<stdbool.h>
+#include<limits.h>
 
 int global_time = 0;
 int num_of_proceses;
@@ -69,33 +70,53 @@ int line_parse(char *line, struct process *dest) {
     return 1;
 }
 
+
+
 //Read file and save data to array
-int file_read(char filename[], struct process procs[]) {
+int file_read(char filename[], struct process **procs_out) {
+
+    int capacity = 2;
+    struct process *procs = malloc(capacity * sizeof(struct process));
+    if (procs == NULL) return 1;
+
     //get a pointer to file
     FILE *file = open_file(filename);
     if (file == NULL) return 1;  
 
     //initialise variables
+   
     char *line = NULL;
     size_t len = 0;
     ssize_t amount_read;
     int i = 0; 
-
+    
     //read file, copy data to array and initialise values
     while((amount_read = getline(&line, &len, file)) != -1) {
-        
+
+        if (i == capacity) {
+
+            capacity *= 2;
+            struct process *tmp = realloc(procs, capacity * sizeof(struct process));
+            if (tmp == NULL) {
+                free(procs);
+                return 1;
+            }
+            
+            procs = tmp;
+        }
+
         if (line_parse(line, &procs[i]) == 1) return 1;
 
         procs[i].exec_prog = 0;
         procs[i].ran_in_pass = false;
         procs[i].complete = false;
         
-        //!!reallocate here!!
         i++;
     }
+    num_of_proceses = i;
     free(line);
-
     fclose(file);
+    *procs_out = procs;
     return 0;
 }
 
@@ -106,7 +127,7 @@ int priority_decider(struct process tasks[])
     start at -1 so we can return -1 if nothing needs processing*/
     int prio_index = -1; 
     
-    int max_prio = 100; //intitalise the max priority delibratly higher than any real priority value 
+    int max_prio = INT_MAX; //intitalise the max priority delibratly higher than any real priority value 
 
     for (int i = 0; i < num_of_proceses; i++)
     {
@@ -192,7 +213,7 @@ void run_process(struct process tasks[], int x)
 int main(int argc, char *argv[])
 {
     
-    struct process *process_array = malloc(sizeof(struct process));
+    struct process *process_array = NULL;
 
     //ensure correct number of arguments
     if(argc != 2) {
@@ -200,7 +221,7 @@ int main(int argc, char *argv[])
         return 1;
     }
     //ensure file has been read correctly
-    if (file_read(argv[1], process_array) == 1) {
+    if (file_read(argv[1], &process_array) == 1) {
         return 1;
     }
 
