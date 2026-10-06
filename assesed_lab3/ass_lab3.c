@@ -7,22 +7,29 @@ By Finlay Thomson SID: 23953297*/
 
 #define MAX_REQUESTS 1000
 
-
-struct song_slot {
+//song defined by its playlist and track no
+typedef struct  {
     int playlist_id;
     int track_num;
     int last_played;
-};
+} song_slot;
 
-struct playlist {
+//playlist as written in inpput doc
+typedef struct {
     int id;
     int request_qty;
     int requests[MAX_REQUESTS];
-};
+} playlist;
 
-struct song_slot make_library() {
-
-
+//fix this:
+void make_library(song_slot *out) {
+    
+    for (int plst; plst < 8; plst++) {
+        for (int track; track < 4; track++) {
+            out->playlist_id = plst;
+            out->track_num = track;
+        }
+    }
 }
 
 //open a file
@@ -34,7 +41,7 @@ FILE* open_file(char filename[]) {
     return fp;
 }
 
-void line_parse(char *line, struct playlist *dest) {
+void line_parse(char *line, playlist *dest) {
 
     char name[10];
     int used;
@@ -53,7 +60,7 @@ void line_parse(char *line, struct playlist *dest) {
 }
 
 //read playlist file and copy to array
-int file_parse(char filename[], struct playlist playlists[]){
+int file_parse(char filename[], playlist playlists[]){
 
     FILE *file = open_file(filename);
     if (file == NULL) return 1;
@@ -73,7 +80,7 @@ int file_parse(char filename[], struct playlist playlists[]){
 
 int main(int argc, char *argv[]) {
 
-    struct playlist playlist_array[10]; 
+    playlist playlist_array[10]; 
 
     //if(argc != 3) return 1;
 
