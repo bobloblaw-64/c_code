@@ -1,9 +1,12 @@
 /*CITS2002 Assesed Lab 3
 By Finlay Thomson SID: 23953297*/
 
-#include<stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+
+#define MAX_REQUESTS 1000
+
 
 struct song_slot {
     int playlist_id;
@@ -13,48 +16,81 @@ struct song_slot {
 
 struct playlist {
     int id;
-    int song_qty;
-    int *song_array;
+    int request_qty;
+    int requests[MAX_REQUESTS];
 };
 
+struct song_slot make_library() {
+
+
+}
 
 //open a file
 FILE* open_file(char filename[]) {
     FILE *fp;
     fp=fopen(filename, "r");
-    if (fp == NULL) {
-        printf("file error\n");
-        return NULL;
-    }
+    if (fp == NULL) return NULL;
+    
     return fp;
 }
 
-//given a line and process structure, will write that line to the struct
-int line_parse(char *line, struct playlist *dest) {
-    
-    int used;//bit of the line already parsed
-    
-    char *name = NULL;
+void line_parse(char *line, struct playlist *dest) {
 
-    //first assign name
-    if (sscanf(line, "%ms%n", &name, &used) != 1) {
-         return 1;
-    } 
+    char name[10];
+    int used;
+    sscanf(line, "%9s%n", name, &used);
     dest->id = atoi(&name[8]);
 
     char *songs = line + used;
+
+    int i = 0;
+
+    while(sscanf(songs, "%d%n", &dest->requests[i], &used) == 1 && i < MAX_REQUESTS) {
+        songs = songs + used;
+        i++;
+    } 
+    dest->request_qty = i;
+}
+
+//read playlist file and copy to array
+int file_parse(char filename[], struct playlist playlists[]){
+
+    FILE *file = open_file(filename);
+    if (file == NULL) return 1;
     
-    dest->song_qty = 0;
-    int capacity = 2;
+    char line[MAX_REQUESTS * sizeof(int)];
+    int i = 0;
 
-    while (true) {
-        
-        if (sscanf(songs, "%d%n", &dest->song_array[i], &used) != 1) {
+    while(fgets(line, sizeof(line), file) && i < 8) {
 
-        }
+        line_parse(line, &playlists[i]);
+        i++;
     }
-    
 
+    fclose(file);
+    return 0;
+}
 
+int main(int argc, char *argv[]) {
+
+    struct playlist playlist_array[10]; 
+
+    //if(argc != 3) return 1;
+
+    if (file_parse(argv[1], playlist_array) == 1) return 1;
+
+    //test looop:
+    int i = 0;
     
+    while (i < 8) {
+        printf("id %d qty %d requests:", playlist_array[i].id, playlist_array[i].request_qty);
+        int j = 0;
+        while (j < playlist_array[i].request_qty) {
+            printf("%d ", playlist_array[i].requests[j]);
+            j++;
+        }
+        printf("\n");
+        i++;
+    }
+
 }
