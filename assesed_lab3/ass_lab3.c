@@ -24,10 +24,9 @@ typedef struct {
 //fix this:
 void make_library(song_slot *out) {
     
-    for (int plst; plst < 8; plst++) {
-        for (int track; track < 4; track++) {
-            out->playlist_id = plst;
-            out->track_num = track;
+    for (int plst = 0; plst < 8; plst++) {
+        for (int track = 0; track < 4; track++) {
+            
         }
     }
 }
