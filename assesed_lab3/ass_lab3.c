@@ -6,6 +6,9 @@ By Finlay Thomson SID: 23953297*/
 #include <stdbool.h>
 
 #define MAX_REQUESTS 1000
+#define NOT_CACHED 99
+
+int global_time = 0;
 
 //song defined by its playlist and track no
 typedef struct  {
@@ -19,26 +22,29 @@ typedef struct {
     int id;
     int request_qty;
     int requests[MAX_REQUESTS];
+    int track_location[4];
+    int next_request;
 } playlist;
 
-//fix this:
-void make_library(song_slot *out) {
-    
+//creates library data and pointers:
+void make_library(song_slot data[32], song_slot *ptrs[32]) {
+    int i;
     for (int plst = 0; plst < 8; plst++) {
+
         for (int track = 0; track < 4; track++) {
-            
+            //calculate index
+            i = plst * 4 + track;
+            //initialise data:
+            data[i].playlist_id = plst;
+            data[i].track_num = track;
+            data[i].last_played = 0;
+            //initialise pointers:
+            ptrs[i] = &data[i];
         }
     }
 }
 
-//open a file
-FILE* open_file(char filename[]) {
-    FILE *fp;
-    fp=fopen(filename, "r");
-    if (fp == NULL) return NULL;
-    
-    return fp;
-}
+
 
 void line_parse(char *line, playlist *dest) {
 
@@ -51,52 +57,76 @@ void line_parse(char *line, playlist *dest) {
 
     int i = 0;
 
-    while(sscanf(songs, "%d%n", &dest->requests[i], &used) == 1 && i < MAX_REQUESTS) {
-        songs = songs + used;
-        i++;
-    } 
+    while (i < MAX_REQUESTS && sscanf(songs, "%d%n", &dest->requests[i], &used) == 1) {
+      songs = songs + used;
+      i++;
+    }
     dest->request_qty = i;
 }
 
 //read playlist file and copy to array
 int file_parse(char filename[], playlist playlists[]){
 
-    FILE *file = open_file(filename);
-    if (file == NULL) return 1;
-    
-    char line[MAX_REQUESTS * sizeof(int)];
+    FILE *file;
+    file = fopen(filename, "r");
+    if (file == NULL) {
+        printf("file read error\n");
+        fclose(file);
+        return 1;
+    }
+    char line[(MAX_REQUESTS * 2 + 10) * sizeof(char)];
     int i = 0;
 
-    while(fgets(line, sizeof(line), file) && i < 8) {
+    while (i < 8 && fgets(line, sizeof(line), file)) {
 
-        line_parse(line, &playlists[i]);
-        i++;
+      line_parse(line, &playlists[i]);
+      i++;
     }
+
+    if (i != 8) return 1;
 
     fclose(file);
     return 0;
 }
 
+//initialise next request and tracks cache location for playlist array
+void init_playlist(playlist dest[8]) {
+
+    for (int plst = 0; plst < 8; plst++) {
+
+        dest[plst].next_request = 0;
+
+        for (int i = 0; i < 4; i++) {
+
+            dest[plst].track_location[i] = NOT_CACHED;
+        }
+    }
+}
+
+//todo
+int write_report(song_slot **lib[], song_slot **cache[]) {
+
+}
+
 int main(int argc, char *argv[]) {
 
-    playlist playlist_array[10]; 
-
-    //if(argc != 3) return 1;
-
-    if (file_parse(argv[1], playlist_array) == 1) return 1;
-
-    //test looop:
-    int i = 0;
-    
-    while (i < 8) {
-        printf("id %d qty %d requests:", playlist_array[i].id, playlist_array[i].request_qty);
-        int j = 0;
-        while (j < playlist_array[i].request_qty) {
-            printf("%d ", playlist_array[i].requests[j]);
-            j++;
-        }
-        printf("\n");
-        i++;
+    //check correct argument number
+    if(argc != 3) {
+        printf("incorrect number of arguments\n");
+        return 1;
     }
+    //initialise all the structures we will need:
+    playlist playlist_array[8]; 
+    song_slot library_data[32];
+    song_slot *library_ptrs[32];
+    song_slot *cache[16] = {NULL};
+
+    //setup library array:
+    make_library(library_data, library_ptrs);
+
+    //parse text file and copy to array, then initialise next request and cache location array
+    if (file_parse(argv[1], playlist_array) == 1) return 1;
+    init_playlist(playlist_array);
+
 
 }
