@@ -15,6 +15,7 @@ typedef struct  {
     int playlist_id;
     int track_num;
     int last_played;
+    int cache_time;
 } song_slot;
 
 //playlist as written in inpput doc
@@ -104,9 +105,48 @@ void init_playlist(playlist dest[8]) {
 }
 
 //todo
-int write_report(song_slot **lib[], song_slot **cache[]) {
+int write_report(char filename[], playlist playlists[], song_slot *cache[]) {
 
+    FILE *file;
+    file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("file write error\n");
+        fclose(file);
+        return 1;
+    }
+
+    fprintf(file, "Track tables:\n");
+    for (int plst = 0; plst < 8; plst++) {
+        
+        fprintf(file, "Playlist%d: %d, %d, %d, %d\n", plst, 
+            playlists[plst].track_location[0], playlists[plst].track_location[1],
+            playlists[plst].track_location[2], playlists[plst].track_location[3]);
+    }
+
+    fprintf(file, "\nSong Cache:\n");
+    for (int i = 0; i < 16; i++) {
+
+        if (cache[i] == NULL) {
+            
+            fprintf(file, "Slot %d: NULL\n", i);
+            continue;
+        
+        }
+        fprintf(file, "Slot %d: %d,%d,%d", i,
+        cache[i]->playlist_id, cache[i]->track_num, cache[i]->last_played);
+        
+        if (i != 15) {
+            fprintf(file, ";\n");
+        }
+        else {
+            fprintf(file, "\n");
+        }
+    }
+    fclose(file);
+    return 0;
 }
+
+
 
 int main(int argc, char *argv[]) {
 
@@ -128,5 +168,6 @@ int main(int argc, char *argv[]) {
     if (file_parse(argv[1], playlist_array) == 1) return 1;
     init_playlist(playlist_array);
 
+    write_report(argv[2], playlist_array, cache);
 
 }
