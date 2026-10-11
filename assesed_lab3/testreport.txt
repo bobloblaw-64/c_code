@@ -1,0 +1,27 @@
+Track tables:
+Playlist0: 99, 99, 99, 99
+Playlist1: 99, 99, 99, 99
+Playlist2: 99, 99, 99, 99
+Playlist3: 99, 99, 99, 99
+Playlist4: 99, 99, 99, 99
+Playlist5: 99, 99, 99, 99
+Playlist6: 99, 99, 99, 99
+Playlist7: 99, 99, 99, 99
+
+Song Cache:
+Slot 0: NULL
+Slot 1: NULL
+Slot 2: NULL
+Slot 3: NULL
+Slot 4: NULL
+Slot 5: NULL
+Slot 6: NULL
+Slot 7: NULL
+Slot 8: NULL
+Slot 9: NULL
+Slot 10: NULL
+Slot 11: NULL
+Slot 12: NULL
+Slot 13: NULL
+Slot 14: NULL
+Slot 15: NULL

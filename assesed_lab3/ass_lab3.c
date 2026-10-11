@@ -15,7 +15,6 @@ typedef struct  {
     int playlist_id;
     int track_num;
     int last_played;
-    int cache_time;
 } song_slot;
 
 //playlist as written in inpput doc
@@ -72,7 +71,6 @@ int file_parse(char filename[], playlist playlists[]){
     file = fopen(filename, "r");
     if (file == NULL) {
         printf("file read error\n");
-        fclose(file);
         return 1;
     }
     char line[(MAX_REQUESTS * 2 + 10) * sizeof(char)];
@@ -104,14 +102,13 @@ void init_playlist(playlist dest[8]) {
     }
 }
 
-//todo
+//write results to text file
 int write_report(char filename[], playlist playlists[], song_slot *cache[]) {
 
     FILE *file;
     file = fopen(filename, "w");
     if (file == NULL) {
         printf("file write error\n");
-        fclose(file);
         return 1;
     }
 
@@ -132,7 +129,7 @@ int write_report(char filename[], playlist playlists[], song_slot *cache[]) {
             continue;
         
         }
-        fprintf(file, "Slot %d: %d,%d,%d", i,
+        fprintf(file, "Slot %d: %d, %d, %d", i,
         cache[i]->playlist_id, cache[i]->track_num, cache[i]->last_played);
         
         if (i != 15) {
@@ -147,6 +144,87 @@ int write_report(char filename[], playlist playlists[], song_slot *cache[]) {
 }
 
 
+//todo! this is shit so just start over lol
+int slot_choose(playlist p, song_slot *c[]) {
+
+    int cache_slot;
+
+    for (int i = 0; i < 16; i++) {
+        if (c[i] == NULL) return i;
+    }
+
+    int least_recent = NOT_CACHED;
+    for (int i = 0; i < 4; i++) {
+
+        int last_played = c[p.track_location[i]]->last_played;
+
+        if (last_played < least_recent) {
+
+            least_recent = last_played;
+            cache_slot = p.track_location[i];
+        }
+    }
+
+    if (least_recent == NOT_CACHED) {
+
+        for (int i = 0; i < 16; i++) {
+
+        int last_played = c[i]->last_played;
+
+        if (last_played < least_recent) {
+
+            least_recent = last_played;
+            cache_slot = i;
+            }
+        }
+    }
+
+    return cache_slot;
+}
+
+void request_song(int t, playlist p, song_slot *lib[], song_slot *cache[]) {
+    int cache_pos = p.track_location[t];
+
+    if (cache_pos != NOT_CACHED) {//is song in cache if so set last played to current time?
+        cache[cache_pos]->last_played = global_time;
+    }
+
+    else {
+
+        cache_pos = slot_choose(p, cache);
+        p.track_location[t] = cache_pos;
+
+        int lib_pos = p.id * 4 + t;
+        cache[cache_pos] = lib[lib_pos];
+    }
+}
+
+//main sim loop
+void playlist_loop(playlist plsts[], song_slot *lib[], song_slot *cache[]) {
+    
+    int finished_plsts;
+
+    while (true) {
+
+        finished_plsts = 0;
+        for (int i = 0; i < 8; i++) {
+
+            int nxt_req = plsts[i].next_request;
+            //skip playlist if requests fullfilled
+            if (nxt_req >= plsts[i].request_qty) {
+                finished_plsts ++;
+                continue;
+            }
+
+            int track = plsts[i].requests[nxt_req];
+            request_song(track, plsts[i], lib, cache);
+
+            plsts[i].next_request++;
+            global_time++;
+        }
+        if (finished_plsts == 8) break;
+    }
+}
 
 int main(int argc, char *argv[]) {
 
