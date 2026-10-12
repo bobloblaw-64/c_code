@@ -1,0 +1,27 @@
+Track tables:
+Playlist0: 8, 12, 99, 0
+Playlist1: 9, 1, 13, 99
+Playlist2: 14, 99, 99, 2
+Playlist3: 3, 99, 99, 99
+Playlist4: 10, 99, 4, 99
+Playlist5: 99, 99, 5, 99
+Playlist6: 99, 6, 99, 99
+Playlist7: 99, 11, 15, 7
+
+Song Cache:
+Slot 0: 0, 3, 141;
+Slot 1: 1, 1, 109;
+Slot 2: 2, 3, 123;
+Slot 3: 3, 0, 3;
+Slot 4: 4, 2, 140;
+Slot 5: 5, 2, 5;
+Slot 6: 6, 1, 96;
+Slot 7: 7, 3, 136;
+Slot 8: 0, 0, 143;
+Slot 9: 1, 0, 114;
+Slot 10: 4, 0, 142;
+Slot 11: 7, 1, 129;
+Slot 12: 0, 1, 144;
+Slot 13: 1, 2, 104;
+Slot 14: 2, 0, 131;
+Slot 15: 7, 2, 133

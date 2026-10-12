@@ -1,4 +1,4 @@
-/*CITS2002 Assesed Lab 3
+/*CITS2002 Assessed Lab 3
 By Finlay Thomson SID: 23953297*/
 
 #include <limits.h>
@@ -9,6 +9,7 @@ By Finlay Thomson SID: 23953297*/
 #define MAX_REQUESTS 1000
 #define NOT_CACHED 99
 
+//how many time steps the simulation has currently taken :
 int global_time = 0;
 
 //song defined by its playlist and track no
@@ -18,7 +19,7 @@ typedef struct  {
     int last_played;
 } song_slot;
 
-//playlist as written in inpput doc
+//struct for each playlist
 typedef struct {
     int id;
     int request_qty;
@@ -33,7 +34,7 @@ void make_library(song_slot data[32], song_slot *ptrs[32]) {
     for (int plst = 0; plst < 8; plst++) {
 
         for (int track = 0; track < 4; track++) {
-            //calculate index
+            //having a track and playlist combo be stored systematically will help us later:
             i = plst * 4 + track;
             //initialise data:
             data[i].playlist_id = plst;
@@ -46,12 +47,12 @@ void make_library(song_slot data[32], song_slot *ptrs[32]) {
 }
 
 
-
-void line_parse(char *line, playlist *dest) {
+//parse a single line of input file, copying playlist info to our struct
+int line_parse(char *line, playlist *dest) {
 
     char name[10];
     int used;
-    sscanf(line, "%9s%n", name, &used);
+    if (sscanf(line, "%9s%n", name, &used) != 1) return 1;
     dest->id = atoi(&name[8]);
 
     char *songs = line + used;
@@ -63,10 +64,11 @@ void line_parse(char *line, playlist *dest) {
       i++;
     }
     dest->request_qty = i;
+    return 0;
 }
 
 //read playlist file and copy to array
-int file_parse(char filename[], playlist playlists[]){
+int file_parse(char filename[], playlist playlists[]) {
 
     FILE *file;
     file = fopen(filename, "r");
@@ -79,15 +81,21 @@ int file_parse(char filename[], playlist playlists[]){
 
     while (i < 8 && fgets(line, sizeof(line), file)) {
 
-      line_parse(line, &playlists[i]);
+      if (line_parse(line, &playlists[i]) == 1) {
+        printf("line %d invalid\n", i);
+        fclose(file);
+        return 1;
+      }
+
       i++;
     }
 
     if (i != 8) {
+        printf("invalid number of playlists\n");
         fclose(file);
         return 1;
     }
-    
+
     fclose(file);
     return 0;
 }
@@ -148,7 +156,8 @@ int write_report(char filename[], playlist playlists[], song_slot *cache[]) {
 }
 
 
-//choose a slot for a playlist
+/*choose a slot for a playlist, firstly any free cache slots, 
+secondly any local LRU slots, finally the global LRU*/
 int slot_choose(playlist *p, song_slot *c[]) {
 
     //look for empty cache slots:
@@ -176,7 +185,7 @@ int slot_choose(playlist *p, song_slot *c[]) {
     if (min_pos != -1) return min_pos;//min pos will still be -1 if no candidate in local cache
 
     for (int i = 0; i < 16; i++) {
-
+        //as we already ensureed there are no null cache entries we can safely loop through the cache
         if (c[i]->last_played < min_time) {
 
             min_pos = i;
@@ -187,10 +196,12 @@ int slot_choose(playlist *p, song_slot *c[]) {
     return min_pos;
 }
 
+//logic to request a specific song
 void request_song(int t, int p, playlist plsts[], song_slot *lib[], song_slot *cache[]) {
     int cache_pos = plsts[p].track_location[t];
 
-    if (cache_pos != NOT_CACHED) {//is song in cache if so set last played to current time?
+    //if song is in cache, play it, ie. set its lasty played time to the present
+    if (cache_pos != NOT_CACHED) {
         cache[cache_pos]->last_played = global_time;
     }
 
@@ -201,9 +212,11 @@ void request_song(int t, int p, playlist plsts[], song_slot *lib[], song_slot *c
 
         int lib_pos = plsts[p].id * 4 + t;
 
-        if (cache[cache_pos] != NULL) {
+        if (cache[cache_pos] != NULL) {//if this isnt null, we must evict a song
+            //this is the playlist and song id that is getting evicted from the cache:
             int pid = cache[cache_pos]->playlist_id;
             int tid = cache[cache_pos]->track_num;
+            //update the evicted song on its corrasponding playlist so it knows its not in the cache
             plsts[pid].track_location[tid] = NOT_CACHED;
         }
 
@@ -223,7 +236,8 @@ void playlist_loop(playlist plsts[], song_slot *lib[], song_slot *cache[]) {
         for (int i = 0; i < 8; i++) {
 
             int nxt_req = plsts[i].next_request;
-            //skip playlist if requests fullfilled
+
+            //if requests fullfilled, skip playlist without advancing time:
             if (nxt_req >= plsts[i].request_qty) {
                 finished_plsts ++;
                 continue;
@@ -232,13 +246,15 @@ void playlist_loop(playlist plsts[], song_slot *lib[], song_slot *cache[]) {
             int track = plsts[i].requests[nxt_req];
             request_song(track, i, plsts, lib, cache);
 
+            //advance global time and the next request by one once we make a request
             plsts[i].next_request++;
-            global_time++;
+            global_time++; 
         }
         if (finished_plsts == 8) break;
     }
 }
 
+//declare needed structs and call all other functions
 int main(int argc, char *argv[]) {
 
     //check correct argument number
@@ -250,7 +266,7 @@ int main(int argc, char *argv[]) {
     playlist playlist_array[8]; 
     song_slot library_data[32];
     song_slot *library_ptrs[32];
-    song_slot *cache[16] = {NULL};
+    song_slot *cache[16] = {NULL};//this just points at the items in library that are in the cache
 
     //setup library array:
     make_library(library_data, library_ptrs);
@@ -261,6 +277,6 @@ int main(int argc, char *argv[]) {
 
     playlist_loop(playlist_array, library_ptrs, cache);
 
-    write_report(argv[2], playlist_array, cache);
+    if (write_report(argv[2], playlist_array, cache) == 1) return 1;
 
 }
