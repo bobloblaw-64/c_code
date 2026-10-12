@@ -1,6 +1,7 @@
 /*CITS2002 Assesed Lab 3
 By Finlay Thomson SID: 23953297*/
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -82,8 +83,11 @@ int file_parse(char filename[], playlist playlists[]){
       i++;
     }
 
-    if (i != 8) return 1;
-
+    if (i != 8) {
+        fclose(file);
+        return 1;
+    }
+    
     fclose(file);
     return 0;
 }
@@ -144,58 +148,67 @@ int write_report(char filename[], playlist playlists[], song_slot *cache[]) {
 }
 
 
-//todo! this is shit so just start over lol
-int slot_choose(playlist p, song_slot *c[]) {
+//choose a slot for a playlist
+int slot_choose(playlist *p, song_slot *c[]) {
 
-    int cache_slot;
-
+    //look for empty cache slots:
     for (int i = 0; i < 16; i++) {
         if (c[i] == NULL) return i;
     }
 
-    int least_recent = NOT_CACHED;
-    for (int i = 0; i < 4; i++) {
+    //check local LRU
 
-        int last_played = c[p.track_location[i]]->last_played;
+    int min_time = INT_MAX;
+    int min_pos = -1;
 
-        if (last_played < least_recent) {
+    for (int i = 0; i < 4; i++) {//loop through the 4 cached sons of this playlist to find a candidate
 
-            least_recent = last_played;
-            cache_slot = p.track_location[i];
+        int cache_index = p->track_location[i];
+        if (cache_index == NOT_CACHED) continue;
+
+        if (c[cache_index]->last_played < min_time) {
+
+            min_pos = cache_index;
+            min_time = c[cache_index]->last_played;
         }
     }
 
-    if (least_recent == NOT_CACHED) {
+    if (min_pos != -1) return min_pos;//min pos will still be -1 if no candidate in local cache
 
-        for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < 16; i++) {
 
-        int last_played = c[i]->last_played;
+        if (c[i]->last_played < min_time) {
 
-        if (last_played < least_recent) {
-
-            least_recent = last_played;
-            cache_slot = i;
-            }
+            min_pos = i;
+            min_time = c[i]->last_played;
         }
     }
 
-    return cache_slot;
+    return min_pos;
 }
 
-void request_song(int t, playlist p, song_slot *lib[], song_slot *cache[]) {
-    int cache_pos = p.track_location[t];
+void request_song(int t, int p, playlist plsts[], song_slot *lib[], song_slot *cache[]) {
+    int cache_pos = plsts[p].track_location[t];
 
     if (cache_pos != NOT_CACHED) {//is song in cache if so set last played to current time?
         cache[cache_pos]->last_played = global_time;
     }
 
-    else {
+    else {//find a suitable slot in cache
 
-        cache_pos = slot_choose(p, cache);
-        p.track_location[t] = cache_pos;
+        cache_pos = slot_choose(&plsts[p], cache);
+        plsts[p].track_location[t] = cache_pos;
 
-        int lib_pos = p.id * 4 + t;
+        int lib_pos = plsts[p].id * 4 + t;
+
+        if (cache[cache_pos] != NULL) {
+            int pid = cache[cache_pos]->playlist_id;
+            int tid = cache[cache_pos]->track_num;
+            plsts[pid].track_location[tid] = NOT_CACHED;
+        }
+
         cache[cache_pos] = lib[lib_pos];
+        cache[cache_pos]->last_played = global_time;  
     }
 }
 
@@ -217,7 +230,7 @@ void playlist_loop(playlist plsts[], song_slot *lib[], song_slot *cache[]) {
             }
 
             int track = plsts[i].requests[nxt_req];
-            request_song(track, plsts[i], lib, cache);
+            request_song(track, i, plsts, lib, cache);
 
             plsts[i].next_request++;
             global_time++;
@@ -245,6 +258,8 @@ int main(int argc, char *argv[]) {
     //parse text file and copy to array, then initialise next request and cache location array
     if (file_parse(argv[1], playlist_array) == 1) return 1;
     init_playlist(playlist_array);
+
+    playlist_loop(playlist_array, library_ptrs, cache);
 
     write_report(argv[2], playlist_array, cache);
 
